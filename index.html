@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Financiamento Casa · Santander</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0d14;
+    --surface: #111520;
+    --surface2: #161b28;
+    --border: rgba(255,255,255,0.07);
+    --accent: #EC1C24;
+    --accent2: #ff6b35;
+    --gold: #f0b429;
+    --green: #22c55e;
+    --blue: #3b82f6;
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --font: 'Syne', sans-serif;
+    --font-body: 'Plus Jakarta Sans', sans-serif;
+    --mono: 'DM Mono', monospace;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content:'';
+    position:fixed;
+    inset:0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events:none;
+    z-index:0;
+  }
+
+  /* ===================== LOGIN ===================== */
+  #loginScreen {
+    position: fixed; inset: 0; z-index: 9999;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  #loginScreen::before {
+    content:'';
+    position:absolute; inset:0;
+    background: radial-gradient(ellipse 60% 50% at 50% 40%, rgba(236,28,36,0.08) 0%, transparent 70%);
+    pointer-events:none;
+  }
+  .login-box {
+    background: var(--surface);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+    padding: 48px 44px;
+    width: 100%; max-width: 420px;
+    position: relative; z-index: 1;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+    animation: loginFadeIn 0.4s ease;
+  }
+  @keyframes loginFadeIn {
+    from { opacity:0; transform:translateY(16px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+  .login-logo {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 36px;
+  }
+  .login-logo-icon {
+    width: 48px; height: 48px;
+    background: var(--accent);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font); font-size: 22px; font-weight: 800; color: #fff;
+  }
+  .login-logo-text { line-height: 1.25; }
+  .login-logo-title { font-family: var(--font); font-size: 18px; font-weight: 800; }
+  .login-logo-sub { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+  .login-heading {
+    font-family: var(--font); font-size: 26px; font-weight: 800;
+    margin-bottom: 6px; letter-spacing: -0.5px;
+  }
+  .login-sub {
+    font-size: 13px; color: var(--muted); margin-bottom: 32px; line-height: 1.5;
+    font-family: var(--font-body);
+  }
+  .login-field { margin-bottom: 16px; }
+  .login-field label {
+    display: block; font-size: 11px; font-family: var(--mono);
+    color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;
+  }
+  .login-input {
+    width: 100%; background: var(--bg);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px; padding: 13px 16px;
+    color: var(--text); font-family: var(--font-body); font-size: 15px;
+    outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    letter-spacing: 0.2px;
+  }
+  .login-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(236,28,36,0.12);
+  }
+  .login-input::placeholder { color: #374151; }
+  .login-btn {
+    width: 100%; padding: 14px;
+    background: var(--accent); color: #fff;
+    border: none; border-radius: 10px;
+    font-family: var(--font); font-size: 15px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s;
+    margin-top: 8px; letter-spacing: 0.5px;
+  }
+  .login-btn:hover { background: #c01018; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(236,28,36,0.3); }
+  .login-btn:active { transform: translateY(0); }
+  .login-error {
+    background: rgba(236,28,36,0.1); border: 1px solid rgba(236,28,36,0.3);
+    color: #ff6b6b; border-radius: 8px; padding: 10px 14px;
+    font-size: 13px; font-family: var(--font-body); margin-top: 14px;
+    display: none; animation: shake 0.3s ease;
+  }
+  @keyframes shake {
+    0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)}
+  }
+  .login-hint {
+    margin-top: 20px; padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-size: 11px; color: var(--muted); font-family: var(--mono);
+    text-align: center; line-height: 1.6;
+  }
+  .screen-lock-overlay {
+    position: fixed; inset: 0; z-index: 9998;
+    background: var(--bg);
+    display: none;
+  }
+
+  /* ===================== APP ===================== */
+  #appScreen { display: none; }
+
+  .container { max-width:1200px; margin:0 auto; padding:0 24px; position:relative; z-index:1; }
+
+  header {
+    padding: 32px 0 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+  .header-inner {
+    display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+  }
+  .brand { display:flex; align-items:center; gap:14px; }
+  .brand-icon {
+    width:44px; height:44px; background: var(--accent);
+    border-radius:10px; display:flex; align-items:center; justify-content:center;
+    font-size:20px; font-weight:800; color:#fff; font-family: var(--font);
+  }
+  .brand-text { line-height:1.2; }
+  .brand-title { font-family: var(--font); font-size:20px; font-weight:800; letter-spacing:-0.5px; }
+  .brand-sub { font-size:12px; color:var(--muted); font-family:var(--mono); }
+  .header-right { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .contract-badge {
+    font-family:var(--mono); font-size:11px; color: var(--muted);
+    background: var(--surface2); border: 1px solid var(--border);
+    padding:6px 12px; border-radius:6px;
+  }
+  .contract-badge span { color: var(--text); }
+  .logout-btn {
+    padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border);
+    background: transparent; color: var(--muted); font-family: var(--mono);
+    font-size: 11px; cursor: pointer; transition: all 0.2s; letter-spacing: 0.5px;
+  }
+  .logout-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .date-line {
+    display:flex; align-items:center; gap:8px;
+    font-family:var(--mono); font-size:12px; color:var(--muted); margin-bottom:32px;
+  }
+  .date-line::before { content:''; display:block; width:24px; height:1px; background:var(--accent); }
+
+  .grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
+  .grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:24px; }
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px; }
+  @media(max-width:900px) { .grid-4{grid-template-columns:1fr 1fr;} .grid-3{grid-template-columns:1fr 1fr;} }
+  @media(max-width:600px) { .grid-4,.grid-3,.grid-2{grid-template-columns:1fr;} }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius:14px; padding:24px; position:relative; overflow:hidden;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .card:hover { border-color: rgba(255,255,255,0.13); transform:translateY(-1px); }
+  .card-label {
+    font-size:11px; font-family:var(--mono); color:var(--muted);
+    text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;
+  }
+  /* NÚMEROS GRANDES — fonte legível */
+  .card-value {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size:26px; font-weight:800; letter-spacing:-0.5px; line-height:1.1;
+  }
+  .card-sub { font-size:12px; color:var(--muted); margin-top:6px; font-family:var(--mono); }
+  .card-accent { border-left:3px solid var(--accent); }
+  .card-gold   { border-left:3px solid var(--gold); }
+  .card-green  { border-left:3px solid var(--green); }
+  .card-blue   { border-left:3px solid var(--blue); }
+
+  .progress-wrap { margin-top:14px; }
+  .progress-track { height:4px; background:rgba(255,255,255,0.08); border-radius:4px; overflow:hidden; }
+  .progress-fill {
+    height:100%; border-radius:4px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition:width 1s ease;
+  }
+  .progress-labels { display:flex; justify-content:space-between; margin-top:6px; font-size:10px; color:var(--muted); font-family:var(--mono); }
+
+  .section-title {
+    font-family: var(--font); font-size:13px; font-weight:700; letter-spacing:2px;
+    text-transform:uppercase; color:var(--muted); margin-bottom:16px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .section-title::after { content:''; flex:1; height:1px; background:var(--border); }
+
+  .chart-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    padding:28px; margin-bottom:24px;
+  }
+  .chart-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:24px; flex-wrap:wrap; gap:12px; }
+  .chart-title { font-family: var(--font); font-size:18px; font-weight:700; }
+  .chart-subtitle { font-size:12px; color:var(--muted); font-family:var(--mono); margin-top:4px; }
+  canvas { width:100%!important; }
+
+  .amort-card {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius:14px; padding:28px; margin-bottom:24px;
+  }
+  .amort-header { margin-bottom:24px; }
+  .amort-title { font-family: var(--font); font-size:20px; font-weight:800; margin-bottom:4px; }
+  .amort-sub { font-size:12px; color:var(--muted); font-family:var(--mono); }
+
+  .input-row { display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+  .input-group { flex:1; min-width:200px; }
+  .input-label { font-size:11px; font-family:var(--mono); color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+  .input-field {
+    width:100%; background: var(--bg); border:1px solid rgba(255,255,255,0.12);
+    border-radius:8px; padding:12px 16px;
+    color:var(--text); font-family:var(--font-body); font-size:14px;
+    outline:none; transition:border-color 0.2s;
+  }
+  .input-field:focus { border-color: var(--accent); }
+  .btn {
+    padding:12px 28px; border-radius:8px; border:none;
+    font-family:var(--font); font-size:14px; font-weight:700;
+    cursor:pointer; transition:all 0.2s; letter-spacing:0.5px;
+  }
+  .btn-primary { background:var(--accent); color:#fff; }
+  .btn-primary:hover { background:#c01018; transform:translateY(-1px); }
+  .btn-ghost { background:transparent; color:var(--muted); border:1px solid var(--border); }
+  .btn-ghost:hover { border-color:var(--text); color:var(--text); }
+
+  .result-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:20px; }
+  @media(max-width:600px) { .result-grid{grid-template-columns:1fr 1fr;} }
+  .result-item {
+    background:var(--bg); border:1px solid var(--border); border-radius:10px;
+    padding:16px; text-align:center;
+  }
+  .result-label { font-size:10px; color:var(--muted); font-family:var(--mono); text-transform:uppercase; margin-bottom:6px; }
+  .result-value { font-family: 'Plus Jakarta Sans', sans-serif; font-size:20px; font-weight:800; }
+  .result-delta { font-size:11px; font-family:var(--mono); margin-top:4px; }
+  .delta-positive { color:var(--green); }
+  .delta-negative { color:var(--accent); }
+
+  .table-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    padding:24px; margin-bottom:24px;
+  }
+  .table-controls { display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:center; }
+  .search-field {
+    background:var(--bg); border:1px solid rgba(255,255,255,0.1); border-radius:8px;
+    padding:8px 14px; color:var(--text); font-family:var(--mono); font-size:13px;
+    outline:none; width:160px; transition:border-color 0.2s;
+  }
+  .search-field:focus { border-color:var(--accent); }
+  .table-wrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  thead th {
+    font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:1px;
+    color:var(--muted); padding:10px 12px; text-align:right; border-bottom:1px solid var(--border);
+    white-space:nowrap;
+  }
+  thead th:first-child { text-align:left; }
+  tbody tr { border-bottom:1px solid rgba(255,255,255,0.04); transition:background 0.15s; }
+  tbody tr:hover { background:rgba(255,255,255,0.03); }
+  tbody tr.current-row { background:rgba(236,28,36,0.08); border-left:3px solid var(--accent); }
+  tbody td { padding:9px 12px; text-align:right; font-family:var(--mono); font-size:12px; }
+  tbody td:first-child { text-align:left; font-family:var(--font-body); font-size:13px; }
+  .badge {
+    display:inline-block; padding:2px 8px; border-radius:4px;
+    font-size:10px; font-family:var(--mono);
+  }
+  .badge-current { background:rgba(236,28,36,0.2); color:var(--accent); }
+  .badge-paid { background:rgba(34,197,94,0.15); color:var(--green); }
+  .badge-future { background:rgba(255,255,255,0.06); color:var(--muted); }
+  .pagination { display:flex; gap:8px; margin-top:16px; align-items:center; flex-wrap:wrap; }
+  .page-btn {
+    padding:6px 12px; border-radius:6px; border:1px solid var(--border);
+    background:transparent; color:var(--muted); font-family:var(--mono); font-size:12px;
+    cursor:pointer; transition:all 0.15s;
+  }
+  .page-btn:hover { border-color:var(--text); color:var(--text); }
+  .page-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+
+  .decomp-bar {
+    height:28px; border-radius:6px; overflow:hidden;
+    display:flex; margin:12px 0 6px; gap:2px;
+  }
+  .decomp-seg { height:100%; transition:width 0.5s; display:flex; align-items:center; justify-content:center; font-size:10px; font-family:var(--mono); font-weight:500; }
+  .decomp-legend { display:flex; flex-wrap:wrap; gap:12px; margin-top:8px; }
+  .legend-item { display:flex; align-items:center; gap:6px; font-size:11px; font-family:var(--mono); color:var(--muted); }
+  .legend-dot { width:8px; height:8px; border-radius:2px; }
+
+  .hl-red  { color:var(--accent); }
+  .hl-gold { color:var(--gold); }
+  .hl-green{ color:var(--green); }
+  .hl-blue { color:var(--blue); }
+
+  .tabs { display:flex; gap:4px; margin-bottom:20px; background:var(--bg); border-radius:10px; padding:4px; width:fit-content; }
+  .tab {
+    padding:8px 18px; border-radius:7px; border:none; background:transparent;
+    color:var(--muted); font-family:var(--font); font-size:13px; font-weight:600;
+    cursor:pointer; transition:all 0.2s;
+  }
+  .tab.active { background:var(--surface2); color:var(--text); }
+
+  footer {
+    border-top:1px solid var(--border); padding:24px 0; margin-top:40px;
+    font-size:11px; font-family:var(--mono); color:var(--muted);
+  }
+</style>
+</head>
+<body>
+
+<!-- ======================== LOGIN ======================== -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-icon">S</div>
+      <div class="login-logo-text">
+        <div class="login-logo-title">Financiamento Casa</div>
+        <div class="login-logo-sub">Painel Privado · Santander</div>
+      </div>
+    </div>
+    <div class="login-heading">Acesso seguro</div>
+    <div class="login-sub">Insira suas credenciais para acessar os dados do contrato.</div>
+    <div class="login-field">
+      <label>Usuário</label>
+      <input type="text" id="loginUser" class="login-input" placeholder="seu usuário" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="login-field">
+      <label>Senha</label>
+      <input type="password" id="loginPass" class="login-input" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="login-btn" onclick="doLogin()">Entrar</button>
+    <div class="login-error" id="loginError">Usuário ou senha incorretos. Tente novamente.</div>
+    <div class="login-hint">
+      🔒 Acesso restrito ao titular do contrato<br>
+      Contrato #0010508113 · Vila Capuava, Valinhos/SP
+    </div>
+  </div>
+</div>
+
+<!-- ======================== APP ======================== -->
+<div id="appScreen">
+<div class="container">
+
+  <header>
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-icon">S</div>
+        <div class="brand-text">
+          <div class="brand-title">Financiamento Casa</div>
+          <div class="brand-sub">Santander · SAC · TR</div>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="contract-badge">Contrato <span>#0010508113</span> · Assinado <span>13/05/2025</span></div>
+        <button class="logout-btn" onclick="doLogout()">⎋ Sair</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="date-line" id="dateLine">carregando data...</div>
+
+  <div class="section-title">Visão Geral</div>
+  <div class="grid-4">
+    <div class="card card-accent">
+      <div class="card-label" id="kpi-parcela-label">Parcela Atual</div>
+      <div class="card-value hl-red" id="kpi-parcela">—</div>
+      <div class="card-sub" id="kpi-parcela-sub">juros + seguros + TSA</div>
+      <div id="kpi-vencimento" style="margin-top:10px;"></div>
+    </div>
+    <div class="card card-gold">
+      <div class="card-label">Saldo Devedor</div>
+      <div class="card-value hl-gold" id="kpi-saldo">—</div>
+      <div class="card-sub" id="kpi-saldo-sub">de R$ 686.250 financiados</div>
+    </div>
+    <div class="card card-blue">
+      <div class="card-label">Prazo Restante</div>
+      <div class="card-value hl-blue" id="kpi-prazo">—</div>
+      <div class="card-sub">até abr/2060</div>
+    </div>
+    <div class="card card-green">
+      <div class="card-label">Valor do Imóvel</div>
+      <div class="card-value hl-green">R$ 915.000</div>
+      <div class="card-sub">Vila Capuava, Valinhos/SP</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:24px;">
+    <div class="card-label">Progresso do Financiamento</div>
+    <div class="progress-wrap">
+      <div class="progress-track">
+        <div class="progress-fill" id="progressBar" style="width:0%"></div>
+      </div>
+      <div class="progress-labels">
+        <span>mai/2025 — início</span>
+        <span id="progressPct">0%</span>
+        <span>abr/2060 — fim</span>
+      </div>
+    </div>
+    <div style="margin-top:12px; display:flex; gap:24px; flex-wrap:wrap;">
+      <div><span style="font-size:11px;color:var(--muted);font-family:var(--mono)">Total a pagar (sem TR): </span><span style="font-family:var(--mono);font-size:13px;color:var(--gold)">R$ 2.166.545,06</span></div>
+      <div><span style="font-size:11px;color:var(--muted);font-family:var(--mono)">CET: </span><span style="font-family:var(--mono);font-size:13px;color:var(--accent)">12,99% a.a.</span></div>
+      <div><span style="font-size:11px;color:var(--muted);font-family:var(--mono)">Taxa nominal: </span><span style="font-family:var(--mono);font-size:13px;color:var(--text)">11,8273% a.a.</span></div>
+    </div>
+  </div>
+
+  <div class="section-title">Composição da Parcela</div>
+  <div class="grid-3">
+    <div class="card" style="grid-column:span 2;">
+      <div class="card-label">Decomposição — parcela <span id="decompMes">001 · jun/2025</span></div>
+      <div class="decomp-bar" id="decompBar">
+        <div class="decomp-seg" id="seg-juros" style="background:var(--accent);width:78%;">78%</div>
+        <div class="decomp-seg" id="seg-amt" style="background:var(--blue);width:19%;">19%</div>
+        <div class="decomp-seg" id="seg-seg" style="background:var(--gold);width:2%;"></div>
+        <div class="decomp-seg" id="seg-tsa" style="background:#374151;width:1%;"></div>
+      </div>
+      <div class="decomp-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div>Juros: <span id="leg-juros" style="color:var(--text);margin-left:2px;">—</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>Amortização: <span id="leg-amt" style="color:var(--text);margin-left:2px;">—</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--gold)"></div>Seguros: <span id="leg-seg" style="color:var(--text);margin-left:2px;">—</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:#374151"></div>TSA: <span id="leg-tsa" style="color:var(--text);margin-left:2px;">—</span></div>
+      </div>
+      <div style="margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <div class="input-label" style="margin:0">Ver parcela nº:</div>
+        <input type="number" class="input-field" id="decompInput" style="width:90px;padding:8px 12px;" value="1" min="1" max="419">
+        <button class="btn btn-ghost" style="padding:8px 16px;font-size:13px;" onclick="updateDecomp()">Atualizar</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-label">Dados do Contrato</div>
+      <div style="font-size:12px;font-family:var(--mono);line-height:2;color:var(--muted);">
+        <div>Sistema: <span style="color:var(--text)">SAC</span></div>
+        <div>Prazo: <span style="color:var(--text)">419 meses</span></div>
+        <div>MIP: <span style="color:var(--text)">0,0210% / mês</span></div>
+        <div>DFI: <span style="color:var(--text)">0,0050% / mês</span></div>
+        <div>TSA: <span style="color:var(--text)">R$ 25,00 / mês</span></div>
+        <div>Correção: <span style="color:var(--text)">TR mensal</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Evolução Financeira</div>
+  <div class="chart-card">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">Saldo Devedor × Amortização Acumulada</div>
+        <div class="chart-subtitle">projeção sem TR · valores originais do contrato</div>
+      </div>
+      <div class="tabs" id="chartTabs">
+        <button class="tab active" onclick="switchChart('saldo',this)">Saldo</button>
+        <button class="tab" onclick="switchChart('parcela',this)">Parcela</button>
+        <button class="tab" onclick="switchChart('juros',this)">Juros × Amt</button>
+      </div>
+    </div>
+    <canvas id="mainChart" height="280"></canvas>
+  </div>
+
+  <div class="section-title">Simulador de Amortização Extraordinária</div>
+  <div class="amort-card">
+    <div class="amort-header">
+      <div class="amort-title">⚡ Calcule o impacto de um pagamento extra</div>
+      <div class="amort-sub">Informe o mês atual e o valor que deseja abater do saldo devedor</div>
+    </div>
+    <div class="input-row">
+      <div class="input-group">
+        <div class="input-label">Nº da parcela atual</div>
+        <input type="number" id="simParcela" class="input-field" placeholder="ex: 10" value="10" min="1" max="418">
+      </div>
+      <div class="input-group">
+        <div class="input-label">Valor a amortizar (R$)</div>
+        <input type="number" id="simValor" class="input-field" placeholder="ex: 50000" value="50000">
+      </div>
+      <div class="input-group">
+        <div class="input-label">Modalidade</div>
+        <select id="simModal" class="input-field">
+          <option value="prazo">Reduzir Prazo</option>
+          <option value="parcela">Reduzir Parcela</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="calcAmort()">Calcular</button>
+    <div id="simResult" style="display:none;">
+      <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border);">
+        <div class="section-title">Resultado da Simulação</div>
+        <div class="result-grid" id="resultGrid"></div>
+        <div id="resultNote" style="margin-top:14px;font-size:12px;color:var(--muted);font-family:var(--mono);"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Fluxo de Parcelas</div>
+  <div class="table-card">
+    <div class="table-controls">
+      <input type="text" class="search-field" id="searchInput" placeholder="Buscar mês (ex: jan/2030)" oninput="searchTable()">
+      <button class="btn btn-ghost" style="font-size:12px;padding:8px 14px;" onclick="goToCurrentMonth()">Ir p/ mês atual</button>
+      <div style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-left:auto;" id="tableInfo">419 parcelas · página 1/21</div>
+    </div>
+    <div class="table-wrap">
+      <table id="mainTable">
+        <thead>
+          <tr>
+            <th style="text-align:left">Mês</th>
+            <th>Nº</th>
+            <th>Saldo Devedor</th>
+            <th>Amort.</th>
+            <th>Juros</th>
+            <th>Seg. MIP</th>
+            <th>Seg. DFI</th>
+            <th>TSA</th>
+            <th>Parcela Final</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+
+</div>
+
+<footer>
+  <div class="container" style="display:flex;justify-content:space-between;width:100%;flex-wrap:wrap;gap:8px;">
+    <span>Contrato 0010508113 · Santander Financiamento Imobiliário · SAC / TR</span>
+    <span>Imóvel: Rua Gildo Tordin, 775, Casa 08, Vila Capuava, Valinhos/SP</span>
+  </div>
+</footer>
+</div><!-- /appScreen -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+// ============================================================
+// AUTH — credenciais (client-side, para proteção básica)
+// ============================================================
+const CREDENTIALS = {
+  'alexandre': 'casa2025',
+  'andrea': 'casa2025'
+};
+
+let isLoggedIn = false;
+
+function doLogin() {
+  const user = document.getElementById('loginUser').value.trim().toLowerCase();
+  const pass = document.getElementById('loginPass').value;
+  const err  = document.getElementById('loginError');
+
+  if(CREDENTIALS[user] && CREDENTIALS[user] === pass) {
+    isLoggedIn = true;
+    document.getElementById('loginScreen').style.opacity = '0';
+    document.getElementById('loginScreen').style.transition = 'opacity 0.35s ease';
+    setTimeout(() => {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('appScreen').style.display = 'block';
+      initApp();
+    }, 350);
+  } else {
+    err.style.display = 'block';
+    document.getElementById('loginPass').value = '';
+    document.getElementById('loginPass').focus();
+    setTimeout(() => { err.style.display = 'none'; }, 4000);
+  }
+}
+
+function doLogout() {
+  document.getElementById('appScreen').style.display = 'none';
+  document.getElementById('loginScreen').style.opacity = '1';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  isLoggedIn = false;
+}
+
+// ============================================================
+// CONTRACT DATA
+// ============================================================
+const CONTRACT = {
+  valorFinanciamento: 686250,
+  prazo: 419,
+  taxaMensal: 0.009856,
+  mipRate: 0.000210,
+  dfiBase: 915000,
+  dfiRate: 0.0000500,
+  tsa: 25.00,
+  dataInicio: { year:2025, month:5 },
+};
+const MESES_PT = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+
+function gerarFluxo(saldoInicial, parcelaInicio, prazoRestante) {
+  const rows = [];
+  let saldo = saldoInicial;
+  const amt = saldoInicial / prazoRestante;
+  let { year, month } = CONTRACT.dataInicio;
+  for(let i=0; i<parcelaInicio; i++){month++;if(month>12){month=1;year++;}}
+  for(let n=0; n<=prazoRestante; n++){
+    const mesStr = MESES_PT[month-1]+'/'+year;
+    const juros  = n===0 ? 0 : saldo * CONTRACT.taxaMensal;
+    const amtN   = n===0 ? 0 : (n===prazoRestante ? saldo : amt);
+    const mip    = saldo * CONTRACT.mipRate;
+    const dfi    = CONTRACT.dfiBase * CONTRACT.dfiRate;
+    const parcelaFinal = juros + amtN + mip + dfi + (n===0?0:CONTRACT.tsa);
+    const saldoAntes = saldo;
+    if(n>0) saldo = Math.max(0, saldo - amtN);
+    rows.push({ mes:mesStr, num:parcelaInicio+n, saldo:saldoAntes, saldoApos:saldo,
+      amt:amtN, juros, mip, dfi, tsa:n===0?0:CONTRACT.tsa, parcelaFinal });
+    month++; if(month>12){month=1;year++;}
+  }
+  return rows;
+}
+
+let FLUXO = [];
+
+const fmt  = v => v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+function getCurrentParcelaIndex() {
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth()+1;
+  const diff = (y - CONTRACT.dataInicio.year)*12 + (m - CONTRACT.dataInicio.month);
+  return Math.min(Math.max(diff, 0), CONTRACT.prazo);
+}
+
+// ============================================================
+// APP INIT
+// ============================================================
+function initApp() {
+  FLUXO = gerarFluxo(CONTRACT.valorFinanciamento, 0, CONTRACT.prazo);
+  filteredRows = [...FLUXO];
+
+  const now = new Date();
+  document.getElementById('dateLine').textContent =
+    'Atualizado em ' + now.toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+
+  const cur = getCurrentParcelaIndex();
+  const row = FLUXO[cur] || FLUXO[1];
+  document.getElementById('kpi-parcela').textContent = 'R$ '+fmt(row.parcelaFinal);
+  document.getElementById('kpi-saldo').textContent   = 'R$ '+fmt(row.saldoApos);
+  document.getElementById('kpi-prazo').textContent   = (CONTRACT.prazo - cur) + ' parcelas';
+
+  // ── Vencimento: todo dia 13. Se cair em fds, mostra riscado + próxima data útil ──
+  (function renderVencimento(){
+    const now = new Date();
+    const y = now.getFullYear(), m = now.getMonth(); // month 0-indexed
+    // Parcela do mês corrente vence dia 13
+    const venc13 = new Date(y, m, 13);
+    const diaSemana = venc13.getDay(); // 0=dom, 6=sáb
+
+    const DIAS_PT = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
+    const MESES_LONGO = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+
+    let proxUtil = new Date(venc13);
+    if(diaSemana === 6) proxUtil.setDate(13 + 2); // sáb → seg
+    if(diaSemana === 0) proxUtil.setDate(13 + 1); // dom → seg
+
+    const isFds = diaSemana === 6 || diaSemana === 0;
+    const fmt13 = '13/'+String(m+1).padStart(2,'0')+'/'+y;
+    const fmtProxy = String(proxUtil.getDate()).padStart(2,'0')+'/'+String(proxUtil.getMonth()+1).padStart(2,'0')+'/'+proxUtil.getFullYear();
+    const diaProxy = DIAS_PT[proxUtil.getDay()];
+
+    // Já passou do dia 13 este mês? Mostrar próximo mês
+    const hoje = now.getDate();
+    const jaVenceu = hoje > proxUtil.getDate() && now.getMonth() === proxUtil.getMonth();
+
+    const container = document.getElementById('kpi-vencimento');
+
+    if(jaVenceu){
+      // Mostra vencimento do próximo mês
+      const proximoMes = new Date(y, m+1, 13);
+      const diaPM = proximoMes.getDay();
+      let proxUtilPM = new Date(proximoMes);
+      if(diaPM===6) proxUtilPM.setDate(15);
+      if(diaPM===0) proxUtilPM.setDate(14);
+      const isFdsPM = diaPM===6||diaPM===0;
+      const fmtPM = '13/'+String(proximoMes.getMonth()+1).padStart(2,'0')+'/'+proximoMes.getFullYear();
+      const fmtProxPM = String(proxUtilPM.getDate()).padStart(2,'0')+'/'+String(proxUtilPM.getMonth()+1).padStart(2,'0')+'/'+proxUtilPM.getFullYear();
+      container.innerHTML = `
+        <div style="font-size:10px;color:var(--muted);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Próximo vencimento</div>
+        ${isFdsPM
+          ? `<div style="font-family:var(--mono);font-size:12px;"><span style="text-decoration:line-through;color:var(--muted);">${fmtPM}</span> <span style="color:#f97316;">⚠ fds</span></div>
+             <div style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--green);">→ ${fmtProxPM} <span style="font-size:11px;color:var(--muted)">(${DIAS_PT[proxUtilPM.getDay()]})</span></div>`
+          : `<div style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);">${fmtPM} <span style="font-size:11px;color:var(--muted)">(${DIAS_PT[diaPM]})</span></div>`
+        }
+        <div style="font-size:10px;color:var(--green);font-family:var(--mono);margin-top:3px;">✓ mês atual pago</div>`;
+    } else {
+      // Dias restantes
+      const hoje2 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const alvo  = new Date(proxUtil.getFullYear(), proxUtil.getMonth(), proxUtil.getDate());
+      const diasFaltam = Math.round((alvo - hoje2)/(1000*60*60*24));
+      const urgente = diasFaltam <= 3;
+      container.innerHTML = `
+        <div style="font-size:10px;color:var(--muted);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Vencimento</div>
+        ${isFds
+          ? `<div style="font-family:var(--mono);font-size:12px;"><span style="text-decoration:line-through;color:var(--muted);">${fmt13}</span> <span style="color:#f97316;font-size:11px;">⚠ cai no ${DIAS_PT[diaSemana]}</span></div>
+             <div style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--green);">→ ${fmtProxy} <span style="font-size:11px;color:var(--muted)">(${diaProxy})</span></div>`
+          : `<div style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);">${fmt13} <span style="font-size:11px;color:var(--muted)">(${DIAS_PT[diaSemana]})</span></div>`
+        }
+        <div style="font-size:11px;margin-top:4px;font-family:var(--mono);color:${urgente?'#f97316':'var(--muted)'};">
+          ${diasFaltam===0?'⚡ vence hoje!':diasFaltam===1?'⚡ vence amanhã!':diasFaltam<0?'verificar':'faltam '+diasFaltam+' dia'+(diasFaltam!==1?'s':'')}
+        </div>`;
+    }
+  })();
+
+  const pct = (cur / CONTRACT.prazo * 100).toFixed(1);
+  setTimeout(() => {
+    document.getElementById('progressBar').style.width = pct+'%';
+  }, 100);
+  document.getElementById('progressPct').textContent = pct+'% concluído';
+
+  updateDecomp();
+  renderChart();
+  renderTable(filteredRows, 1);
+}
+
+// ============================================================
+// DECOMPOSIÇÃO
+// ============================================================
+function updateDecomp() {
+  const n   = parseInt(document.getElementById('decompInput').value) || 1;
+  const idx = Math.min(Math.max(n, 1), 419);
+  const row = FLUXO[idx];
+  if(!row) return;
+  const total  = row.parcelaFinal;
+  const pJuros = (row.juros/total*100).toFixed(1);
+  const pAmt   = (row.amt/total*100).toFixed(1);
+  const pSeg   = ((row.mip+row.dfi)/total*100).toFixed(1);
+  const pTsa   = (row.tsa/total*100).toFixed(1);
+  document.getElementById('decompMes').textContent = String(idx).padStart(3,'0')+' · '+row.mes;
+  document.getElementById('seg-juros').style.width = pJuros+'%';
+  document.getElementById('seg-juros').textContent = pJuros+'%';
+  document.getElementById('seg-amt').style.width   = pAmt+'%';
+  document.getElementById('seg-amt').textContent   = pAmt+'%';
+  document.getElementById('seg-seg').style.width   = pSeg+'%';
+  document.getElementById('seg-tsa').style.width   = pTsa+'%';
+  document.getElementById('leg-juros').textContent = 'R$ '+fmt(row.juros);
+  document.getElementById('leg-amt').textContent   = 'R$ '+fmt(row.amt);
+  document.getElementById('leg-seg').textContent   = 'R$ '+fmt(row.mip+row.dfi);
+  document.getElementById('leg-tsa').textContent   = 'R$ '+fmt(row.tsa);
+}
+
+// ============================================================
+// CHART
+// ============================================================
+let mainChart, currentChartType = 'saldo';
+Chart.defaults.color = '#6b7280';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+Chart.defaults.font.family = "'DM Mono', monospace";
+
+function buildChartData(type) {
+  const labels=[], d1=[], d2=[];
+  for(let i=0;i<FLUXO.length;i+=12){
+    const r=FLUXO[i]; labels.push(r.mes);
+    if(type==='saldo'){ d1.push(r.saldo); d2.push(CONTRACT.valorFinanciamento-r.saldo); }
+    else if(type==='parcela'){ d1.push(r.parcelaFinal); }
+    else { d1.push(r.juros); d2.push(r.amt); }
+  }
+  return {labels,d1,d2};
+}
+function switchChart(type,btn){
+  currentChartType=type;
+  document.querySelectorAll('#chartTabs .tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active'); renderChart();
+}
+function renderChart(){
+  if(mainChart) mainChart.destroy();
+  const {labels,d1,d2}=buildChartData(currentChartType);
+  const ctx=document.getElementById('mainChart').getContext('2d');
+  const cfgs={
+    saldo:{datasets:[
+      {label:'Saldo Devedor',data:d1,borderColor:'#EC1C24',backgroundColor:'rgba(236,28,36,0.08)',fill:true,tension:0.4,pointRadius:0,borderWidth:2},
+      {label:'Amort. Acumulada',data:d2,borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,0.06)',fill:true,tension:0.4,pointRadius:0,borderWidth:2}
+    ]},
+    parcela:{datasets:[{label:'Parcela Final',data:d1,borderColor:'#f0b429',backgroundColor:'rgba(240,180,41,0.08)',fill:true,tension:0.4,pointRadius:0,borderWidth:2}]},
+    juros:{datasets:[
+      {label:'Juros',data:d1,borderColor:'#EC1C24',backgroundColor:'rgba(236,28,36,0.1)',fill:true,tension:0.4,pointRadius:0,borderWidth:2},
+      {label:'Amortização',data:d2,borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.1)',fill:true,tension:0.4,pointRadius:0,borderWidth:2}
+    ]}
+  };
+  mainChart=new Chart(ctx,{type:'line',data:{labels,...cfgs[currentChartType]},options:{
+    responsive:true,interaction:{mode:'index',intersect:false},
+    plugins:{
+      legend:{labels:{color:'#9ca3af',font:{size:11},boxWidth:12}},
+      tooltip:{backgroundColor:'#161b28',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,
+        titleFont:{size:11},bodyFont:{size:11},
+        callbacks:{label:ctx=>'R$ '+fmt(ctx.raw)}}
+    },
+    scales:{
+      x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{maxRotation:45,font:{size:10}}},
+      y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{font:{size:10},callback:v=>'R$ '+(v/1000).toFixed(0)+'K'}}
+    }
+  }});
+}
+
+// ============================================================
+// SIMULADOR
+// ============================================================
+function calcAmort(){
+  const parcN=parseInt(document.getElementById('simParcela').value)||1;
+  const valor=parseFloat(document.getElementById('simValor').value)||0;
+  const modal=document.getElementById('simModal').value;
+  if(parcN<1||parcN>=CONTRACT.prazo||valor<=0){alert('Verifique os valores.');return;}
+  const row=FLUXO[parcN];
+  const saldoAtual=row.saldo;
+  const saldoNovo=Math.max(0,saldoAtual-valor);
+  const parcelasRest=CONTRACT.prazo-parcN;
+  const parcelaAtual=row.parcelaFinal;
+  const amtNovo=saldoNovo/parcelasRest;
+  const jurosNovo=saldoNovo*CONTRACT.taxaMensal;
+  const parcelaNovaPrazo=jurosNovo+amtNovo+row.mip+row.dfi+row.tsa;
+  const parcelaNovaMes=modal==='parcela'
+    ?(saldoNovo*CONTRACT.taxaMensal*Math.pow(1+CONTRACT.taxaMensal,parcelasRest))/(Math.pow(1+CONTRACT.taxaMensal,parcelasRest)-1)+row.mip+row.dfi+row.tsa
+    :parcelaNovaPrazo;
+  const economia=(parcelaAtual-parcelaNovaPrazo)*parcelasRest-valor;
+  const mesesEcon=Math.round(valor/(saldoAtual/parcelasRest));
+  document.getElementById('simResult').style.display='block';
+  document.getElementById('resultGrid').innerHTML=`
+    <div class="result-item"><div class="result-label">Saldo Antes</div><div class="result-value" style="color:var(--accent)">R$ ${fmt(saldoAtual)}</div></div>
+    <div class="result-item"><div class="result-label">Saldo Depois</div><div class="result-value" style="color:var(--green)">R$ ${fmt(saldoNovo)}</div><div class="result-delta delta-positive">↓ R$ ${fmt(valor)}</div></div>
+    <div class="result-item"><div class="result-label">${modal==='prazo'?'Meses Economizados':'Nova Parcela'}</div><div class="result-value" style="color:var(--gold)">${modal==='prazo'?mesesEcon+' meses':'R$ '+fmt(parcelaNovaMes)}</div><div class="result-delta delta-positive">${modal==='prazo'?'≈ '+(mesesEcon/12).toFixed(1)+' anos':'↓ R$ '+fmt(parcelaAtual-parcelaNovaMes)}</div></div>
+    <div class="result-item"><div class="result-label">Parcela Atual</div><div class="result-value">R$ ${fmt(parcelaAtual)}</div></div>
+    <div class="result-item"><div class="result-label">Economia c/ Juros</div><div class="result-value" style="color:var(--green)">R$ ${fmt(Math.abs(economia))}</div><div class="result-delta delta-positive">estimativa</div></div>
+    <div class="result-item"><div class="result-label">Retorno Efetivo</div><div class="result-value" style="color:var(--blue)">${((Math.abs(economia)/valor)*100).toFixed(1)}%</div><div class="result-delta">sobre o valor pago</div></div>
+  `;
+  document.getElementById('resultNote').textContent='Simulação sem TR. Valores estimados — consulte o Santander para amortização oficial.';
+  document.getElementById('simResult').scrollIntoView({behavior:'smooth'});
+}
+
+// ============================================================
+// TABELA
+// ============================================================
+let currentPage=1;
+const PAGE_SIZE=20;
+let filteredRows=[];
+
+function renderTable(rows,page){
+  const tbody=document.getElementById('tableBody');
+  const start=(page-1)*PAGE_SIZE;
+  const slice=rows.slice(start,start+PAGE_SIZE);
+  const curIdx=getCurrentParcelaIndex();
+  tbody.innerHTML=slice.map(r=>{
+    const isPaid=r.num<curIdx, isCur=r.num===curIdx;
+    const badge=isPaid?`<span class="badge badge-paid">paga</span>`:isCur?`<span class="badge badge-current">atual</span>`:`<span class="badge badge-future">futura</span>`;
+    return `<tr class="${isCur?'current-row':''}">
+      <td>${r.mes}</td><td>${String(r.num).padStart(3,'0')}</td>
+      <td>R$ ${fmt(r.saldoApos)}</td><td>R$ ${fmt(r.amt)}</td><td>R$ ${fmt(r.juros)}</td>
+      <td>R$ ${fmt(r.mip)}</td><td>R$ ${fmt(r.dfi)}</td><td>R$ ${fmt(r.tsa)}</td>
+      <td style="font-weight:700;color:var(--text)">R$ ${fmt(r.parcelaFinal)}</td><td>${badge}</td>
+    </tr>`;
+  }).join('');
+  renderPagination(rows,page);
+  document.getElementById('tableInfo').textContent=rows.length+' parcelas · página '+page+'/'+Math.ceil(rows.length/PAGE_SIZE);
+}
+function renderPagination(rows,page){
+  const total=Math.ceil(rows.length/PAGE_SIZE);
+  const pag=document.getElementById('pagination');
+  let html='', pages=[1];
+  for(let i=Math.max(2,page-2);i<=Math.min(total-1,page+2);i++) pages.push(i);
+  if(total>1) pages.push(total);
+  const uniq=[...new Set(pages)];
+  uniq.forEach((p,i)=>{
+    if(i>0&&uniq[i]-uniq[i-1]>1) html+='<span style="color:var(--muted);font-family:var(--mono);font-size:12px">…</span>';
+    html+=`<button class="page-btn ${p===page?'active':''}" onclick="gotoPage(${p})">${p}</button>`;
+  });
+  pag.innerHTML=html;
+}
+function gotoPage(p){
+  currentPage=p; renderTable(filteredRows,currentPage);
+  document.getElementById('mainTable').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function searchTable(){
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  filteredRows=q?FLUXO.filter(r=>r.mes.toLowerCase().includes(q)):[...FLUXO];
+  currentPage=1; renderTable(filteredRows,1);
+}
+function goToCurrentMonth(){
+  filteredRows=[...FLUXO]; document.getElementById('searchInput').value='';
+  const curIdx=getCurrentParcelaIndex();
+  currentPage=Math.ceil((curIdx+1)/PAGE_SIZE);
+  renderTable(filteredRows,currentPage);
+  setTimeout(()=>{
+    const rows=document.querySelectorAll('.current-row');
+    if(rows[0]) rows[0].scrollIntoView({behavior:'smooth',block:'center'});
+  },200);
+}
+</script>
+</body>
+</html>
