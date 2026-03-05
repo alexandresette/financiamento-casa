@@ -436,7 +436,7 @@
       </div>
     </div>
     <div style="margin-top:12px; display:flex; gap:24px; flex-wrap:wrap;">
-      <div><span style="font-size:11px;color:var(--muted);font-family:var(--mono)">Total a pagar (sem TR): </span><span style="font-family:var(--mono);font-size:13px;color:var(--gold)">R$ 2.166.545,06</span></div>
+      <div><span style="font-size:11px;color:var(--muted);font-family:var(--mono)">Total projetado (c/ TR estimada): </span><span style="font-family:var(--mono);font-size:13px;color:var(--gold)" id="totalProjetado">calculando...</span></div>
       <div><span style="font-size:11px;color:var(--muted);font-family:var(--mono)">CET: </span><span style="font-family:var(--mono);font-size:13px;color:var(--accent)">12,99% a.a.</span></div>
       <div><span style="font-size:11px;color:var(--muted);font-family:var(--mono)">Taxa nominal: </span><span style="font-family:var(--mono);font-size:13px;color:var(--text)">11,8273% a.a.</span></div>
     </div>
@@ -539,6 +539,7 @@
           <tr>
             <th style="text-align:left">Mês</th>
             <th>Nº</th>
+            <th>TR</th>
             <th>Saldo Devedor</th>
             <th>Amort.</th>
             <th>Juros</th>
@@ -553,6 +554,9 @@
       </table>
     </div>
     <div class="pagination" id="pagination"></div>
+    <div style="margin-top:12px;font-size:11px;color:var(--muted);font-family:var(--mono);">
+      * TR marcada com asterisco = estimativa de 0,1693%/mês (média mai/2025–mar/2026). TR sem asterisco = valor real do Banco Central.
+    </div>
   </div>
 
 </div>
@@ -630,23 +634,51 @@ const CONTRACT = {
 };
 const MESES_PT = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 
-function gerarFluxo(saldoInicial, parcelaInicio, prazoRestante) {
+// ── TR histórica real (Banco Central) — valores em % mensal ──
+const TR_HISTORICA = {
+  '2025-05': 0.1712, '2025-06': 0.1699, '2025-07': 0.1758,
+  '2025-08': 0.1722, '2025-09': 0.1742, '2025-10': 0.1758,
+  '2025-11': 0.1634, '2025-12': 0.1742, '2026-01': 0.1718,
+  '2026-02': 0.1207, '2026-03': 0.1700,
+};
+// Estimativa futura = média dos últimos 6 meses conhecidos
+const TR_ESTIMADA_PCT = 0.1693;
+
+function getTRpct(year, month) {
+  const key = year + '-' + String(month).padStart(2,'0');
+  return TR_HISTORICA[key] !== undefined ? TR_HISTORICA[key] : TR_ESTIMADA_PCT;
+}
+function isTRReal(year, month) {
+  return TR_HISTORICA[year+'-'+String(month).padStart(2,'0')] !== undefined;
+}
+
+// ── Fluxo SAC + TR: prazo fixo, amortização = saldo_corrigido / restantes ──
+function gerarFluxo() {
   const rows = [];
-  let saldo = saldoInicial;
-  const amt = saldoInicial / prazoRestante;
-  let { year, month } = CONTRACT.dataInicio;
-  for(let i=0; i<parcelaInicio; i++){month++;if(month>12){month=1;year++;}}
-  for(let n=0; n<=prazoRestante; n++){
+  let saldo = CONTRACT.valorFinanciamento;
+  let year = CONTRACT.dataInicio.year;
+  let month = CONTRACT.dataInicio.month;
+
+  for (let n = 0; n <= CONTRACT.prazo; n++) {
     const mesStr = MESES_PT[month-1]+'/'+year;
-    const juros  = n===0 ? 0 : saldo * CONTRACT.taxaMensal;
-    const amtN   = n===0 ? 0 : (n===prazoRestante ? saldo : amt);
-    const mip    = saldo * CONTRACT.mipRate;
-    const dfi    = CONTRACT.dfiBase * CONTRACT.dfiRate;
-    const parcelaFinal = juros + amtN + mip + dfi + (n===0?0:CONTRACT.tsa);
-    const saldoAntes = saldo;
-    if(n>0) saldo = Math.max(0, saldo - amtN);
-    rows.push({ mes:mesStr, num:parcelaInicio+n, saldo:saldoAntes, saldoApos:saldo,
-      amt:amtN, juros, mip, dfi, tsa:n===0?0:CONTRACT.tsa, parcelaFinal });
+    const trPct  = getTRpct(year, month);
+    const trReal = isTRReal(year, month);
+    const tr     = trPct / 100;
+
+    const saldoCorr = saldo * (1 + tr);
+    const restantes = CONTRACT.prazo - n;
+    const amt   = n === 0 ? 0 : saldoCorr / restantes;
+    const juros = n === 0 ? 0 : saldoCorr * CONTRACT.taxaMensal;
+    const mip   = saldoCorr * CONTRACT.mipRate;
+    const dfi   = CONTRACT.dfiBase * CONTRACT.dfiRate;
+    const tsa   = n === 0 ? 0 : CONTRACT.tsa;
+    const parcelaFinal = n === 0 ? 0 : juros + amt + mip + dfi + tsa;
+    const saldoApos = n === 0 ? saldoCorr : Math.max(0, saldoCorr - amt);
+
+    rows.push({ mes:mesStr, num:n, trPct, trReal,
+      saldo:saldoCorr, saldoApos, amt, juros, mip, dfi, tsa, parcelaFinal });
+
+    saldo = saldoApos;
     month++; if(month>12){month=1;year++;}
   }
   return rows;
@@ -654,7 +686,7 @@ function gerarFluxo(saldoInicial, parcelaInicio, prazoRestante) {
 
 let FLUXO = [];
 
-const fmt  = v => v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmt = v => v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 
 function getCurrentParcelaIndex() {
   const now = new Date();
@@ -667,7 +699,7 @@ function getCurrentParcelaIndex() {
 // APP INIT
 // ============================================================
 function initApp() {
-  FLUXO = gerarFluxo(CONTRACT.valorFinanciamento, 0, CONTRACT.prazo);
+  FLUXO = gerarFluxo();
   filteredRows = [...FLUXO];
 
   const now = new Date();
@@ -679,6 +711,13 @@ function initApp() {
   document.getElementById('kpi-parcela').textContent = 'R$ '+fmt(row.parcelaFinal);
   document.getElementById('kpi-saldo').textContent   = 'R$ '+fmt(row.saldoApos);
   document.getElementById('kpi-prazo').textContent   = (CONTRACT.prazo - cur) + ' parcelas';
+  // TR indicator on saldo card
+  const trAtual = row.trPct;
+  const trIsReal = row.trReal;
+  document.getElementById('kpi-saldo-sub').innerHTML =
+    'TR '+trAtual.toFixed(4)+'%/mês'+(trIsReal?' <span style="color:var(--green);font-size:10px">● real</span>':
+    ' <span style="color:var(--gold);font-size:10px">● estimada</span>')+
+    ' · de R$ 686.250 financiados';
 
   // ── Vencimento: todo dia 13. Se cair em fds, mostra riscado + próxima data útil ──
   (function renderVencimento(){
@@ -748,6 +787,10 @@ function initApp() {
     document.getElementById('progressBar').style.width = pct+'%';
   }, 100);
   document.getElementById('progressPct').textContent = pct+'% concluído';
+
+  // Total projetado com TR
+  const totalProj = FLUXO.reduce((s,r)=>s+r.parcelaFinal,0);
+  document.getElementById('totalProjetado').textContent = 'R$ '+fmt(totalProj);
 
   updateDecomp();
   renderChart();
@@ -834,36 +877,90 @@ function renderChart(){
 }
 
 // ============================================================
-// SIMULADOR
+// SIMULADOR (TR-aware)
 // ============================================================
 function calcAmort(){
-  const parcN=parseInt(document.getElementById('simParcela').value)||1;
-  const valor=parseFloat(document.getElementById('simValor').value)||0;
-  const modal=document.getElementById('simModal').value;
+  const parcN = parseInt(document.getElementById('simParcela').value)||1;
+  const valor = parseFloat(document.getElementById('simValor').value)||0;
+  const modal = document.getElementById('simModal').value;
   if(parcN<1||parcN>=CONTRACT.prazo||valor<=0){alert('Verifique os valores.');return;}
-  const row=FLUXO[parcN];
-  const saldoAtual=row.saldo;
-  const saldoNovo=Math.max(0,saldoAtual-valor);
-  const parcelasRest=CONTRACT.prazo-parcN;
-  const parcelaAtual=row.parcelaFinal;
-  const amtNovo=saldoNovo/parcelasRest;
-  const jurosNovo=saldoNovo*CONTRACT.taxaMensal;
-  const parcelaNovaPrazo=jurosNovo+amtNovo+row.mip+row.dfi+row.tsa;
-  const parcelaNovaMes=modal==='parcela'
-    ?(saldoNovo*CONTRACT.taxaMensal*Math.pow(1+CONTRACT.taxaMensal,parcelasRest))/(Math.pow(1+CONTRACT.taxaMensal,parcelasRest)-1)+row.mip+row.dfi+row.tsa
-    :parcelaNovaPrazo;
-  const economia=(parcelaAtual-parcelaNovaPrazo)*parcelasRest-valor;
-  const mesesEcon=Math.round(valor/(saldoAtual/parcelasRest));
+
+  const row = FLUXO[parcN];
+  const parcelaAtual = row.parcelaFinal;
+  const saldoAtual   = row.saldo;      // já com TR aplicada
+  const saldoNovo    = Math.max(0, saldoAtual - valor);
+  const parcelasRest = CONTRACT.prazo - parcN; // parcelas restantes
+
+  // Simular mês a mês com TR estimada para ambos os cenários
+  function simularTotal(saldoIni, prazoRes) {
+    let s = saldoIni;
+    let y = CONTRACT.dataInicio.year;
+    let m = CONTRACT.dataInicio.month + parcN;
+    while(m>12){m-=12;y++;}
+    let totalPago=0, parcelas=0;
+    for(let i=1;i<=prazoRes;i++){
+      m++; if(m>12){m=1;y++;}
+      const tr = getTRpct(y,m)/100;
+      const sc  = s*(1+tr);
+      const amt = sc/( prazoRes - i + 1);
+      const j   = sc*CONTRACT.taxaMensal;
+      const mip = sc*CONTRACT.mipRate;
+      const pf  = j+amt+mip+CONTRACT.dfiBase*CONTRACT.dfiRate+CONTRACT.tsa;
+      totalPago += pf; parcelas++;
+      s = sc - amt;
+    }
+    return {totalPago, parcelas};
+  }
+
+  // Parcela reduzida (prazo fixo, saldo menor)
+  const trProx  = getTRpct(CONTRACT.dataInicio.year, CONTRACT.dataInicio.month + parcN + 1)/100;
+  const scNovo  = saldoNovo*(1+trProx);
+  const amtNovo = scNovo/parcelasRest;
+  const jurosNovo = scNovo*CONTRACT.taxaMensal;
+  const mipNovo   = scNovo*CONTRACT.mipRate;
+  const parcelaNova = jurosNovo + amtNovo + mipNovo + CONTRACT.dfiBase*CONTRACT.dfiRate + CONTRACT.tsa;
+
+  // Prazo reduzido: qual prazo faz parcela ≈ parcelaAtual com saldo menor?
+  // 1/P = (parcela-dfi-tsa)/(saldoNovo*(1+trEstim)) - taxa - mip
+  const trE  = TR_ESTIMADA_PCT/100;
+  const scNE = saldoNovo*(1+trE);
+  const fator = (parcelaAtual - CONTRACT.dfiBase*CONTRACT.dfiRate - CONTRACT.tsa)/scNE - CONTRACT.taxaMensal - CONTRACT.mipRate;
+  const novoPrazo = fator>0 ? Math.round(1/fator) : parcelasRest;
+  const mesesSalvos = parcelasRest - novoPrazo;
+
+  // Economia total
+  const {totalPago:totSem} = simularTotal(saldoAtual, parcelasRest);
+  const {totalPago:totCom} = simularTotal(saldoNovo,  parcelasRest);
+  const economiaParcela = totSem - totCom - valor;
+
+  const {totalPago:totPrazoSem} = simularTotal(saldoAtual, parcelasRest);
+  const {totalPago:totPrazoCom} = simularTotal(saldoNovo,  novoPrazo);
+  const economiaPrazo = totPrazoSem - totPrazoCom - valor;
+
   document.getElementById('simResult').style.display='block';
-  document.getElementById('resultGrid').innerHTML=`
-    <div class="result-item"><div class="result-label">Saldo Antes</div><div class="result-value" style="color:var(--accent)">R$ ${fmt(saldoAtual)}</div></div>
-    <div class="result-item"><div class="result-label">Saldo Depois</div><div class="result-value" style="color:var(--green)">R$ ${fmt(saldoNovo)}</div><div class="result-delta delta-positive">↓ R$ ${fmt(valor)}</div></div>
-    <div class="result-item"><div class="result-label">${modal==='prazo'?'Meses Economizados':'Nova Parcela'}</div><div class="result-value" style="color:var(--gold)">${modal==='prazo'?mesesEcon+' meses':'R$ '+fmt(parcelaNovaMes)}</div><div class="result-delta delta-positive">${modal==='prazo'?'≈ '+(mesesEcon/12).toFixed(1)+' anos':'↓ R$ '+fmt(parcelaAtual-parcelaNovaMes)}</div></div>
-    <div class="result-item"><div class="result-label">Parcela Atual</div><div class="result-value">R$ ${fmt(parcelaAtual)}</div></div>
-    <div class="result-item"><div class="result-label">Economia c/ Juros</div><div class="result-value" style="color:var(--green)">R$ ${fmt(Math.abs(economia))}</div><div class="result-delta delta-positive">estimativa</div></div>
-    <div class="result-item"><div class="result-label">Retorno Efetivo</div><div class="result-value" style="color:var(--blue)">${((Math.abs(economia)/valor)*100).toFixed(1)}%</div><div class="result-delta">sobre o valor pago</div></div>
-  `;
-  document.getElementById('resultNote').textContent='Simulação sem TR. Valores estimados — consulte o Santander para amortização oficial.';
+
+  if(modal==='parcela'){
+    document.getElementById('resultGrid').innerHTML=`
+      <div class="result-item"><div class="result-label">Saldo Antes</div><div class="result-value" style="color:var(--accent)">R$ ${fmt(saldoAtual)}</div></div>
+      <div class="result-item"><div class="result-label">Saldo Depois</div><div class="result-value" style="color:var(--green)">R$ ${fmt(saldoNovo)}</div><div class="result-delta delta-positive">↓ R$ ${fmt(valor)}</div></div>
+      <div class="result-item"><div class="result-label">Nova Parcela (próx. mês)</div><div class="result-value" style="color:var(--gold)">R$ ${fmt(parcelaNova)}</div><div class="result-delta delta-positive">↓ R$ ${fmt(parcelaAtual-parcelaNova)}/mês</div></div>
+      <div class="result-item"><div class="result-label">Parcela Atual</div><div class="result-value">R$ ${fmt(parcelaAtual)}</div></div>
+      <div class="result-item"><div class="result-label">Economia Total c/ Juros</div><div class="result-value" style="color:var(--green)">R$ ${fmt(Math.abs(economiaParcela))}</div><div class="result-delta delta-positive">ao longo do contrato</div></div>
+      <div class="result-item"><div class="result-label">Prazo mantido</div><div class="result-value" style="color:var(--blue)">${parcelasRest} meses</div><div class="result-delta">${Math.floor(parcelasRest/12)}a ${parcelasRest%12}m</div></div>
+    `;
+  } else {
+    document.getElementById('resultGrid').innerHTML=`
+      <div class="result-item"><div class="result-label">Saldo Antes</div><div class="result-value" style="color:var(--accent)">R$ ${fmt(saldoAtual)}</div></div>
+      <div class="result-item"><div class="result-label">Saldo Depois</div><div class="result-value" style="color:var(--green)">R$ ${fmt(saldoNovo)}</div><div class="result-delta delta-positive">↓ R$ ${fmt(valor)}</div></div>
+      <div class="result-item"><div class="result-label">Meses Economizados</div><div class="result-value" style="color:var(--gold)">${mesesSalvos > 0 ? mesesSalvos+' meses' : '< 1 mês'}</div><div class="result-delta delta-positive">${mesesSalvos>0?'≈ '+(mesesSalvos/12).toFixed(1)+' anos':''}</div></div>
+      <div class="result-item"><div class="result-label">Parcela mantida em</div><div class="result-value">R$ ${fmt(parcelaAtual)}</div></div>
+      <div class="result-item"><div class="result-label">Economia Total c/ Juros</div><div class="result-value" style="color:var(--green)">R$ ${fmt(Math.abs(economiaPrazo))}</div><div class="result-delta delta-positive">ao longo do contrato</div></div>
+      <div class="result-item"><div class="result-label">Novo Prazo</div><div class="result-value" style="color:var(--blue)">${novoPrazo} meses</div><div class="result-delta">${Math.floor(novoPrazo/12)}a ${novoPrazo%12}m</div></div>
+    `;
+  }
+
+  document.getElementById('resultNote').textContent =
+    'Cálculo com TR histórica real (mai/2025–mar/2026) + estimativa de '+TR_ESTIMADA_PCT.toFixed(4)+'%/mês para meses futuros. Consulte o Santander para valores oficiais.';
   document.getElementById('simResult').scrollIntoView({behavior:'smooth'});
 }
 
@@ -882,8 +979,11 @@ function renderTable(rows,page){
   tbody.innerHTML=slice.map(r=>{
     const isPaid=r.num<curIdx, isCur=r.num===curIdx;
     const badge=isPaid?`<span class="badge badge-paid">paga</span>`:isCur?`<span class="badge badge-current">atual</span>`:`<span class="badge badge-future">futura</span>`;
+    const trColor = r.trReal ? 'color:var(--text)' : 'color:var(--muted)';
+    const trLabel = r.trPct.toFixed(4)+'%'+(r.trReal?'':'*');
     return `<tr class="${isCur?'current-row':''}">
       <td>${r.mes}</td><td>${String(r.num).padStart(3,'0')}</td>
+      <td style="font-family:var(--mono);font-size:11px;${trColor}">${trLabel}</td>
       <td>R$ ${fmt(r.saldoApos)}</td><td>R$ ${fmt(r.amt)}</td><td>R$ ${fmt(r.juros)}</td>
       <td>R$ ${fmt(r.mip)}</td><td>R$ ${fmt(r.dfi)}</td><td>R$ ${fmt(r.tsa)}</td>
       <td style="font-weight:700;color:var(--text)">R$ ${fmt(r.parcelaFinal)}</td><td>${badge}</td>
