@@ -562,21 +562,28 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
 // ============================================================
-// AUTH — credenciais (client-side, para proteção básica)
+// AUTH — senhas armazenadas como SHA-256 (nunca em texto puro)
 // ============================================================
 const CREDENTIALS = {
-  'alexandre': 'casa2025',
-  'andrea': 'casa2025'
+  'alexandre': '57964def8fbe5bda9a6efdcae37daffc5aa6881404cf6cebf0fe408f6fbf7a71',
+  'andrea':    '57964def8fbe5bda9a6efdcae37daffc5aa6881404cf6cebf0fe408f6fbf7a71'
 };
 
 let isLoggedIn = false;
 
-function doLogin() {
+async function sha256(str) {
+  const buf  = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function doLogin() {
   const user = document.getElementById('loginUser').value.trim().toLowerCase();
   const pass = document.getElementById('loginPass').value;
   const err  = document.getElementById('loginError');
 
-  if(CREDENTIALS[user] && CREDENTIALS[user] === pass) {
+  const hash = await sha256(pass);
+
+  if(CREDENTIALS[user] && CREDENTIALS[user] === hash) {
     isLoggedIn = true;
     document.getElementById('loginScreen').style.opacity = '0';
     document.getElementById('loginScreen').style.transition = 'opacity 0.35s ease';
